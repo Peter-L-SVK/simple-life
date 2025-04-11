@@ -58,7 +58,7 @@ This project is a Rust implementation of a parallel virtual ecosystem simulation
    ```bash
    cargo run --release
    ```
-# Running the Virtual Ecosystem Simulation on Windows
+## Running the Virtual Ecosystem Simulation on Windows
 
 Here's a complete guide to getting the simulation running on Windows systems:
 
@@ -166,7 +166,8 @@ target\release\virtual-ecosystem.exe
 
 You can distribute this file along with any required assets (like the font file).
 
-## Configuration
+
+## Configuration of the simulation
 
 Modify these constants in `main.rs` to adjust simulation parameters:
 
