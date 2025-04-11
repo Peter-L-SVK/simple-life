@@ -200,14 +200,6 @@ To modify being behaviors, adjust the update methods in:
 - `update_carnivore()`
 - `update_omnivore()`
 
-## Future Enhancements
-
-1. Additional being types
-2. Environmental features (seasons, day/night cycle)
-3. More complex genetics system
-4. Save/load simulation state
-5. Interactive controls
-
 ## License
 
 MIT License - See [LICENSE](LICENSE) for details.
