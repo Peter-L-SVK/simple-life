@@ -5,8 +5,8 @@ use std::sync::{Arc, Mutex};
 
 const WINDOW_SIZE: f64 = 800.0;
 const BASE_BEING_SIZE: f64 = 10.0;
-const MAX_BEINGS: usize = 260;
-const MAX_FOOD: usize = 1090;
+const MAX_BEINGS: usize = 220;
+const MAX_FOOD: usize = 790;
 const FOOD_SPAWN_RATE: f64 = 0.99;
 const ENERGY_DECAY: f32 = 0.0000015;
 const STATS_AREA_HEIGHT: f64 = 50.0; // New constant for stats area height

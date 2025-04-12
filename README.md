@@ -9,7 +9,7 @@ This project is a Rust implementation of a parallel virtual ecosystem simulation
 - Multiple being types (Herbivores, Carnivores, Omnivores) with distinct behaviors
 - Genetic traits that evolve over generations
 - Food sources that spawn dynamically
-- Parallel computation using Rayon for efficient multi-core utilization
+- Parallel computation using Rayon for efficient multi-core utilization 
 - Real-time visualization using Piston graphics
 - Dedicated stats display area with comprehensive metrics
 
@@ -66,6 +66,7 @@ This project is a Rust implementation of a parallel virtual ecosystem simulation
   - Multi-core being updates using Rayon
   - Thread-safe food management
   - Configurable thread count
+  - By default utilizing all cores regadless of their number
 
 ## Stats Panel Information
 
