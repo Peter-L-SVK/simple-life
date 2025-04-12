@@ -41,14 +41,14 @@ This project is a Rust implementation of a parallel virtual ecosystem simulation
   - Orange: Omnivores
   - Green: Food sources
 
-### Being Types
+## Being Types
 | Type        | Color | Behavior | Diet | Special Traits |
 |-------------|-------|----------|------|----------------|
 | Herbivore   | Blue  | Passive  | Plants | High perception for food |
 | Carnivore   | Red   | Aggressive | Other beings | Fast movement, high attack |
 | Omnivore    | Orange | Adaptive | Mixed | Balanced abilities |
 
-### Genetic System
+## Genetic System
 - **Inheritable Traits**:
   - Speed (Movement capability)
   - Size (Affects hunting ability)  
