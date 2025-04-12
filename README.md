@@ -70,7 +70,7 @@ This project is a Rust implementation of a parallel virtual ecosystem simulation
   - By default utilizing all of CPU threads and cores regardless of their number 
 
 ![Ecosystem Simulation Demo](parallel.png) <br/>
-*Example of all my 32 CPU threads evenly (Ryzen 5950X)*
+*Example of all my 32 CPU threads used evenly (Ryzen 5950X)*
 
 
 ## Stats Panel Information
