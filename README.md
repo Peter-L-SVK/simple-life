@@ -1,6 +1,7 @@
 # Virtual Ecosystem Simulation
 
-![Ecosystem Simulation Demo](demo.gif) *Example simulation visualization*
+![Ecosystem Simulation Demo](demo.gif) <br/> 
+*Example simulation visualization*
 
 ## Overview
 
@@ -68,7 +69,8 @@ This project is a Rust implementation of a parallel virtual ecosystem simulation
   - Configurable thread count
   - By default utilizing all of CPU threads and cores regardless of their number 
 
-![Ecosystem Simulation Demo](parallel.png) *Example of all my 32 CPU threads evenly (Ryzen 5950X)*
+![Ecosystem Simulation Demo](parallel.png) <br/>
+*Example of all my 32 CPU threads evenly (Ryzen 5950X)*
 
 
 ## Stats Panel Information
