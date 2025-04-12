@@ -66,7 +66,7 @@ This project is a Rust implementation of a parallel virtual ecosystem simulation
   - Multi-core being updates using Rayon
   - Thread-safe food management
   - Configurable thread count
-  - By default utilizing all cores regadless of their number
+  - By default utilizing all of CPU threads and cores regardless of their number 
 
 ## Stats Panel Information
 
