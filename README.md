@@ -68,6 +68,9 @@ This project is a Rust implementation of a parallel virtual ecosystem simulation
   - Configurable thread count
   - By default utilizing all of CPU threads and cores regardless of their number 
 
+![Ecosystem Simulation Demo](parallel.png) *Example of all my 32 CPU threads evenly (Ryzen 5950X)*
+
+
 ## Stats Panel Information
 
 The header displays real-time information:
@@ -238,6 +241,8 @@ The simulation automatically scales to use available CPU cores. For best perform
 1. Use `--release` flag for optimized builds
 2. Larger populations (>100 beings) benefit most from parallelization
 3. Stats display shows active thread count
+
+ Build and tested on Fedora 40 with Ryzen R9 5950X
 
 ## Customization
 
