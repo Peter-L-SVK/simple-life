@@ -11,18 +11,51 @@ This project is a Rust implementation of a parallel virtual ecosystem simulation
 - Food sources that spawn dynamically
 - Parallel computation using Rayon for efficient multi-core utilization
 - Real-time visualization using Piston graphics
+- Dedicated stats display area with comprehensive metrics
 
-## Features
+## Key Updates
 
-- **Three Being Types**:
-  - **Herbivores** (Blue) - Feed on plants
-  - **Carnivores** (Red) - Hunt other beings
-  - **Omnivores** (Orange) - Both hunt and forage
+### Behavior Enforcement System
+- **Cannibalism Prevention**: Beings will no longer target others of their own type
+- **Type-Specific Interactions**:
+  - Herbivores only interact with food
+  - Carnivores only hunt herbivores and omnivores
+  - Omnivores have balanced hunting/foraging behavior
+- **Size-Based Hunting**: Predators only target beings smaller than themselves
 
-- **Genetic System**:
-  - Speed, size, reproduction rate, and perception traits
-  - Inheritance with mutation
-  - Natural selection based on survival and reproduction
+### Enhanced Statistics Display
+- Dedicated stats panel above simulation area
+- Real-time population counts by type
+- Food availability tracking
+- Thread utilization metrics
+- Average energy levels
+- Birth/death counters
+
+### Improved Visualization
+- Clean separation between stats and simulation areas
+- Optimized rendering pipeline
+- Consistent color coding:
+  - Blue: Herbivores
+  - Red: Carnivores  
+  - Orange: Omnivores
+  - Green: Food sources
+
+### Being Types
+| Type        | Color | Behavior | Diet | Special Traits |
+|-------------|-------|----------|------|----------------|
+| Herbivore   | Blue  | Passive  | Plants | High perception for food |
+| Carnivore   | Red   | Aggressive | Other beings | Fast movement, high attack |
+| Omnivore    | Orange | Adaptive | Mixed | Balanced abilities |
+
+### Genetic System
+- **Inheritable Traits**:
+  - Speed (Movement capability)
+  - Size (Affects hunting ability)  
+  - Reproduction Rate
+  - Perception (Detection range)
+- **Mutation**: Small random variations in offspring
+- **Natural Selection**: Successful traits propagate through generations
+
 
 - **Ecosystem Dynamics**:
   - Energy-based lifecycle (consumption, metabolism, reproduction)
@@ -33,6 +66,18 @@ This project is a Rust implementation of a parallel virtual ecosystem simulation
   - Multi-core being updates using Rayon
   - Thread-safe food management
   - Configurable thread count
+
+## Stats Panel Information
+
+The header displays real-time information:
+```
+Population: 120 (H:80 C:20 O:20) | Food: 450 | Threads: 8
+```
+- **Population**: Total beings (with counts by type)
+    
+- **Food**: Available food sources
+    
+- **Threads**: Active worker threads
 
 ## Requirements
 
