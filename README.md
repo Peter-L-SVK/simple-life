@@ -244,7 +244,7 @@ The simulation automatically scales to use available CPU cores. For best perform
 2. Larger populations (>100 beings) benefit most from parallelization
 3. Stats display shows active thread count
 
- Build and tested on Fedora 40 with Ryzen R9 5950X
+ Built and tested on Fedora 40 Cinnamon with Ryzen R9 5950X
 
 ## Customization
 
