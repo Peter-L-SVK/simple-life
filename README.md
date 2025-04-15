@@ -16,6 +16,11 @@ This project is a Rust implementation of a parallel virtual ecosystem simulation
 
 ## Key Updates
 
+### 0.2 Life improvements
+- More modular code base
+- Added FPS counter to stats panel
+- Optimized predator hunting logic
+
 ### Behavior Enforcement System
 - **Cannibalism Prevention**: Beings will no longer target others of their own type
 - **Type-Specific Interactions**:

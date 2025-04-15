@@ -1,7 +1,17 @@
 use piston_window::*;
 use rand::Rng;
 use rayon::prelude::*;
+use std::time::Instant;
 use std::sync::{Arc, Mutex};
+
+mod being;
+mod food;
+mod genetics;
+mod simulation_stats;
+
+use being::{Being, BeingType};
+use food::Food;
+use simulation_stats::SimulationStats;
 
 const WINDOW_SIZE: f64 = 800.0;
 const BASE_BEING_SIZE: f64 = 10.0;
@@ -12,339 +22,6 @@ const ENERGY_DECAY: f32 = 0.0000015;
 const STATS_AREA_HEIGHT: f64 = 50.0; // New constant for stats area height
 const TOTAL_WINDOW_HEIGHT: f64 = WINDOW_SIZE + STATS_AREA_HEIGHT; // New total window height
 
-#[derive(Default)]
-struct SimulationStats {
-    total_births: usize,
-    total_deaths: usize,
-    max_population: usize,
-    food_eaten: usize,
-    energy_history: Vec<f32>,
-    population_history: Vec<usize>,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq)]
-enum BeingType {
-    Herbivore,
-    Carnivore,
-    Omnivore,
-}
-
-#[derive(Clone, PartialEq)]
-struct Genetics {
-    speed: f32,
-    size: f32,
-    reproduction_rate: f32,
-    perception: f32,
-}
-
-impl Genetics {
-    fn new_random(being_type: BeingType) -> Self {
-        let mut rng = rand::rng();
-        let (speed_range, perception_range) = match being_type {
-            BeingType::Carnivore => (1.0..3.0, 15.0..30.0),
-            BeingType::Omnivore => (0.8..2.5, 12.0..25.0),
-            BeingType::Herbivore => (0.5..2.0, 5.0..20.0),
-        };
-        
-        Genetics {
-            speed: rng.random_range(speed_range),
-            size: rng.random_range(0.8..1.2),
-            reproduction_rate: rng.random_range(0.5..1.5),
-            perception: rng.random_range(perception_range),
-        }
-    }
-
-    fn mutate(&self) -> Self {
-        let mut rng = rand::rng();
-        Genetics {
-            speed: (self.speed * rng.random_range(0.9..1.1)).clamp(0.5, 3.0),
-            size: (self.size * rng.random_range(0.9..1.1)).clamp(0.5, 2.0),
-            reproduction_rate: (self.reproduction_rate * rng.random_range(0.9..1.1)).clamp(0.1, 2.0),
-            perception: (self.perception * rng.random_range(0.9..1.1)).clamp(2.0, 30.0),
-        }
-    }
-}
-
-#[derive(Clone, PartialEq)]
-struct Being {
-    x: f64,
-    y: f64,
-    color: [f32; 4],
-    energy: f32,
-    being_type: BeingType,
-    genetics: Genetics,
-    age: u32,
-    max_age: u32,
-}
-
-impl Being {
-    fn new(x: f64, y: f64, being_type: BeingType) -> Self {
-        let genetics = Genetics::new_random(being_type);
-        
-        let (color, max_age) = match being_type {
-            BeingType::Herbivore => ([0.0, 0.0, 1.0, 1.0], 3000),
-            BeingType::Carnivore => ([1.0, 0.0, 0.0, 1.0], 2000),
-            BeingType::Omnivore => ([1.0, 0.5, 0.0, 1.0], 2500),
-        };
-
-        Being {
-            x,
-            y,
-            color,
-            energy: 1.0,
-            being_type,
-            genetics,
-            age: 0,
-            max_age,
-        }
-    }
-
-    fn size(&self) -> f64 {
-        BASE_BEING_SIZE * self.genetics.size as f64
-    }
-
-    fn update(&mut self, beings: &[Being], foods: &[Food]) -> (Vec<usize>, Option<Being>) {
-        // Filter beings based on type before processing
-        let filtered_beings: Vec<&Being> = match self.being_type {
-            BeingType::Herbivore => Vec::new(),  // Herbivores don't need other beings
-            BeingType::Carnivore => beings.iter()
-                .filter(|b| matches!(b.being_type, BeingType::Herbivore | BeingType::Omnivore))
-                .collect(),
-            BeingType::Omnivore => beings.iter()
-                .filter(|b| b.being_type != self.being_type)
-                .collect(),
-        };
-        
-        // Original update logic using filtered_beings instead of beings
-        let mut rng = rand::rng();
-        self.age += 1;
-        self.energy -= ENERGY_DECAY * (self.genetics.size + self.genetics.speed);
-        
-        let perception_range = self.genetics.perception as f64;
-        let mut eaten_food_indices = Vec::new();
-        let mut new_being = None;
-        
-        match self.being_type {
-            BeingType::Herbivore => {
-                self.update_herbivore(foods, perception_range, &mut rng, &mut eaten_food_indices)
-            },
-            BeingType::Carnivore => {
-                if let Some(prey) = self.update_carnivore(&filtered_beings, perception_range, &mut rng) {
-                    return (vec![], Some(prey));
-                }
-            },
-            BeingType::Omnivore => {
-                if let Some((prey, food_indices)) = self.update_omnivore(&filtered_beings, foods, perception_range, &mut rng) {
-                    if let Some(p) = prey {
-                        return (food_indices, Some(p));
-                    }
-                    eaten_food_indices = food_indices;
-                }
-            },
-        }
-        
-        self.x = self.x.max(0.0).min(WINDOW_SIZE - self.size());
-        self.y = self.y.max(0.0).min(WINDOW_SIZE - self.size());
-        
-        if self.can_replicate() {
-            new_being = Some(self.replicate());
-        }
-        
-        (eaten_food_indices, new_being)
-    }
-
-    fn update_herbivore(
-        &mut self,
-        foods: &[Food],
-        perception_range: f64,
-        rng: &mut impl Rng,
-        eaten_food_indices: &mut Vec<usize>,
-    ) {
-        if let Some((idx, nearest_food)) = foods.iter().enumerate().min_by_key(|(_, f)| {
-            let dx = f.x - self.x;
-            let dy = f.y - self.y;
-            ((dx * dx + dy * dy) * 1000.0) as i32
-        }) {
-            let dx = nearest_food.x - self.x;
-            let dy = nearest_food.y - self.y;
-            let distance = (dx * dx + dy * dy).sqrt();
-            
-            if distance < perception_range {
-                self.x += dx / distance * self.genetics.speed as f64 * 1.5;
-                self.y += dy / distance * self.genetics.speed as f64 * 1.5;
-                
-                if distance < self.size() / 2.0 + 2.5 {
-                    eaten_food_indices.push(idx);
-                    self.energy += nearest_food.energy;
-                }
-            } else {
-                self.random_movement(rng);
-            }
-        } else {
-            self.random_movement(rng);
-        }
-    }
-
-    fn update_carnivore(&mut self, beings: &[&Being], perception_range: f64, rng: &mut impl Rng) -> Option<Being> {
-	if let Some(target) = beings.iter()
-            .filter(|&&b| b.size() < self.size())
-            .min_by_key(|&&b| {
-		let dx = b.x - self.x;
-		let dy = b.y - self.y;
-		((dx * dx + dy * dy) * (1.0 + b.energy as f64)) as i32
-            }) 
-	{
-            let dx = target.x - self.x;
-        let dy = target.y - self.y;
-            let distance = (dx * dx + dy * dy).sqrt();
-            
-            if distance < perception_range {
-		let speed_boost = if distance < perception_range / 2.0 { 1.5 } else { 1.0 };
-		self.x += dx / distance * self.genetics.speed as f64 * 2.5 * speed_boost;
-		self.y += dy / distance * self.genetics.speed as f64 * 2.5 * speed_boost;
-		
-		if distance < self.size() / 2.0 + target.size() / 2.0 {
-                    self.energy += target.energy * 0.95;
-                    return Some((*target).clone());  
-		}
-            }
-	}
-	self.random_movement(rng);
-	None
-    }
-    
-    fn update_omnivore(
-	&mut self,
-	beings: &[&Being],
-	foods: &[Food],
-	perception_range: f64,
-	rng: &mut impl Rng,
-    ) -> Option<(Option<Being>, Vec<usize>)> {
-	let mut eaten_food_indices = Vec::new();
-	
-	if rng.random_bool(0.7) {
-            if let Some(target) = beings.iter()
-		.filter(|&&b| b.size() < self.size() * 0.9)
-		.min_by_key(|&&b| {
-                    let dx = b.x - self.x;
-                    let dy = b.y - self.y;
-                    ((dx * dx + dy * dy) * (1.0 + b.energy as f64)) as i32
-		})
-            {
-		let dx = target.x - self.x;
-		let dy = target.y - self.y;
-		let distance = (dx * dx + dy * dy).sqrt();
-		
-		if distance < perception_range {
-                    self.x += dx / distance * self.genetics.speed as f64 * 2.2;
-                    self.y += dy / distance * self.genetics.speed as f64 * 2.2;
-                    
-                    if distance < self.size() / 2.0 + target.size() / 2.0 {
-			self.energy += target.energy * 0.85;
-			return Some((Some((*target).clone()), vec![]));  
-                    }
-		}
-            }
-	} else {
-            if let Some((idx, nearest_food)) = foods.iter().enumerate()
-		.min_by_key(|(_, f)| {
-                    let dx = f.x - self.x;
-                    let dy = f.y - self.y;
-                    ((dx * dx + dy * dy) * 1000.0) as i32
-		}) 
-            {
-		let dx = nearest_food.x - self.x;
-		let dy = nearest_food.y - self.y;
-		let distance = (dx * dx + dy * dy).sqrt();
-		
-		if distance < perception_range * 1.2 {
-                    self.x += dx / distance * self.genetics.speed as f64 * 1.8;
-                    self.y += dy / distance * self.genetics.speed as f64 * 1.8;
-                    
-                    if distance < self.size() / 2.0 + 2.5 {
-			eaten_food_indices.push(idx);
-			self.energy += nearest_food.energy * 1.2;
-                    }
-		}
-            }
-	}
-	
-	self.random_movement(rng);
-	Some((None, eaten_food_indices))
-    }
-    
-    fn random_movement(&mut self, rng: &mut impl Rng) {
-        self.x += rng.random_range(-1.0..1.0) * self.genetics.speed as f64;
-        self.y += rng.random_range(-1.0..1.0) * self.genetics.speed as f64;
-    }
-
-    fn can_replicate(&self) -> bool {
-        let mut rng = rand::rng();
-        let base_chance = match self.being_type {
-            BeingType::Carnivore => 0.0016,
-            BeingType::Omnivore => 0.0013,
-            BeingType::Herbivore => 0.0011,
-        };
-        
-        self.energy > 0.8 &&
-            rng.random_range(0.0..1.0) < (base_chance * self.genetics.reproduction_rate) &&
-            self.age > 80 &&
-            self.age < self.max_age
-    }
-
-    fn replicate(&mut self) -> Being {
-        let mut child = self.clone();
-        let mut rng = rand::rng();
-        
-        child.x += rng.random_range(-20.0..20.0);
-        child.y += rng.random_range(-20.0..20.0);
-        child.energy = self.energy * 0.5;
-        child.genetics = self.genetics.mutate();
-        child.age = 0;
-        self.energy *= 0.5;
-        
-        child
-    }
-
-    fn draw(&self, transform: math::Matrix2d, g: &mut G2d) {
-        let size = self.size();
-        rectangle(
-            self.color,
-            [self.x, self.y, size, size],
-            transform,
-            g,
-        );
-    }
-}
-
-#[derive(Clone, PartialEq)]
-struct Food {
-    x: f64,
-    y: f64,
-    energy: f32,
-}
-
-impl Food {
-    fn new() -> Self {
-        let mut rng = rand::rng();
-        Food {
-            x: rng.random_range(0.0..WINDOW_SIZE),
-            y: rng.random_range(0.0..WINDOW_SIZE),
-            energy: rng.random_range(0.3..0.7),
-        }
-    }
-    
-    fn draw(&self, transform: math::Matrix2d, g: &mut G2d) {
-        let size = 5.0;
-        rectangle(
-            [0.0, 1.0, 0.0, 1.0],
-            [self.x, self.y, size, size],
-            transform,
-            g,
-        );
-    }
-}
-
 fn main() {
     let mut window: PistonWindow = WindowSettings::new(
         "Parallel Virtual Ecosystem",
@@ -353,7 +30,8 @@ fn main() {
     .exit_on_esc(true)
     .build()
     .unwrap();
-    
+
+    // Initialize beings with different types
     let mut beings = vec![
         Being::new(WINDOW_SIZE / 3.0, WINDOW_SIZE / 3.0, BeingType::Herbivore),
         Being::new(WINDOW_SIZE / 4.0, WINDOW_SIZE / 4.0, BeingType::Herbivore),
@@ -375,14 +53,25 @@ fn main() {
             None
         }
     };
+	
+    
     
     let mut stats = SimulationStats {
         energy_history: Vec::with_capacity(1000),
         population_history: Vec::with_capacity(1000),
         ..Default::default()
     };
+
+    let mut last_time = Instant::now();
+    let mut fps = 0.0;
     
     while let Some(e) = window.next() {
+	// Calculate FPS
+        let now = Instant::now();
+        let delta_time = now.duration_since(last_time).as_secs_f64();
+        last_time = now;
+        fps = 0.9 * fps + 0.1 * (1.0 / delta_time);
+	
         // Track population history
         stats.population_history.push(beings.len());
         if beings.len() > stats.max_population {
@@ -411,11 +100,12 @@ fn main() {
             let mut foods = foods_ref.lock().unwrap();
             for (_, eaten_food_indices, _) in updates.iter() {
                 stats.food_eaten += eaten_food_indices.len();
-                for &idx in eaten_food_indices.iter().rev() {
-                    if idx < foods.len() {
-                        foods.remove(idx);
-                    }
-                }
+                // When processing eaten food:
+		for &idx in eaten_food_indices.iter().rev() {
+		    if idx < foods.len() {
+			foods.remove(idx);
+		    }
+		}
             }
         }
         
@@ -475,30 +165,33 @@ fn main() {
             );
             
             // Draw stats text
-            if let Some(ref mut glyphs) = glyphs {
-                let stats_text = format!(
-                    "Population: {} (H:{} C:{} O:{}) | Food: {} | Threads: {}",
-                    beings.len(),
-                    beings.iter().filter(|b| b.being_type == BeingType::Herbivore).count(),
-                    beings.iter().filter(|b| b.being_type == BeingType::Carnivore).count(),
-                    beings.iter().filter(|b| b.being_type == BeingType::Omnivore).count(),
-                    foods.lock().unwrap().len(),
-                    rayon::current_num_threads()
-                );
-                
-                text::Text::new_color([1.0, 1.0, 1.0, 1.0], 20)
-                    .draw(
-                        &stats_text,
-                        glyphs,
-                        &c.draw_state,
-                        c.transform.trans(10.0, 30.0),
-                        g,
-                    )
-                    .unwrap();
-                
-                glyphs.factory.encoder.flush(device);
-            }
-            
+	    if let Some(ref mut glyphs) = glyphs {
+		let stats_text = format!(
+		    "Pop: {}/{} | H:{} C:{} O:{} | Food: {} | Threads: {} | FPS: {:.1} ",
+		    beings.len(),
+		    MAX_BEINGS,
+		    beings.iter().filter(|b| b.being_type == BeingType::Herbivore).count(),
+		    beings.iter().filter(|b| b.being_type == BeingType::Carnivore).count(),
+		    beings.iter().filter(|b| b.being_type == BeingType::Omnivore).count(),
+		    foods.lock().unwrap().len(),
+		    rayon::current_num_threads(),
+		    fps
+		);
+		
+		// White text on dark background
+		text::Text::new_color([1.0, 1.0, 1.0, 1.0], 20)
+		    .draw(
+			&stats_text,
+			glyphs,
+			&c.draw_state,
+			c.transform.trans(10.0, 30.0), // X,Y position
+			g
+		    )
+		    .unwrap();
+		
+		// Important: Flush the glyphs
+		glyphs.factory.encoder.flush(device);
+	    }
             // Create transform for simulation area (offset by STATS_AREA_HEIGHT)
             let sim_transform = c.transform.trans(0.0, STATS_AREA_HEIGHT);
             
