@@ -13,8 +13,7 @@ This project is a Rust implementation of a parallel virtual ecosystem simulation
 - Parallel computation using Rayon for efficient multi-core utilization 
 - Real-time visualization using Piston graphics
 - Dedicated stats display area with comprehensive metrics
-    
-    Built and tested on Fedora 40 Cinnamon with Ryzen R9 5950X
+- Built and tested on Fedora 40 Cinnamon with Ryzen R9 5950X
     
 ## v0.2 Life improvements
 - More modular code base
