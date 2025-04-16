@@ -14,12 +14,14 @@ This project is a Rust implementation of a parallel virtual ecosystem simulation
 - Real-time visualization using Piston graphics
 - Dedicated stats display area with comprehensive metrics
 
-## Key Updates
-
-### 0.2 Life improvements
+## v0.2 Life improvements
 - More modular code base
+- 40% performance increase (avg. therad usage utilization from 7% - 9% to 5% - 7%)
 - Added FPS counter to stats panel
 - Optimized predator hunting logic
+
+
+## Key Updates
 
 ### Behavior Enforcement System
 - **Cannibalism Prevention**: Beings will no longer target others of their own type
@@ -82,13 +84,15 @@ This project is a Rust implementation of a parallel virtual ecosystem simulation
 
 The header displays real-time information:
 ```
-Population: 120 (H:80 C:20 O:20) | Food: 450 | Threads: 8
-```
-- **Population**: Total beings (with counts by type)
+Pop: 120/220 (H:80 C:20 O:20) | Food: 450 | Threads: 8 | FPS: 4200.7
+``` 
+- **Pop**: Total beings from set limit (with counts by type)
     
 - **Food**: Available food sources
     
 - **Threads**: Active worker threads
+
+- **FPS**: Total FPS of simulation running
 
 ## Requirements
 
@@ -100,17 +104,17 @@ Population: 120 (H:80 C:20 O:20) | Food: 450 | Threads: 8
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/virtual-ecosystem.git
-   cd virtual-ecosystem
+   git clone git@github.com:Peter-L-SVK/simple-life.git
+   cd simple-life
    ```
 
-2. Add a font file (optional):
+2. Add a font file in case of not included (optional):
    ```bash
    mkdir assets
    cp /path/to/your/font.ttf assets/FiraSans-Regular.ttf
    ```
 
-3. Build and run:
+3. Build and run in same directory as Cargo.toml:
    ```bash
    cargo run --release
    ```
@@ -138,7 +142,7 @@ Here's a complete guide to getting the simulation running on Windows systems:
 
 2. **Clone and run the project**:
    ```cmd
-   git clone https://github.com/yourusername/virtual-ecosystem.git
+   git clone git@github.com:Peter-L-SVK/simple-life.git
    cd virtual-ecosystem
    cargo run --release
    ```
@@ -160,8 +164,8 @@ For better performance and Linux-like environment:
 
 3. **Run the simulation**:
    ```bash
-   git clone https://github.com/yourusername/virtual-ecosystem.git
-   cd virtual-ecosystem
+   git clone git@github.com:Peter-L-SVK/simple-life.git
+   cd simple-life
    cargo run --release
    ```
 
