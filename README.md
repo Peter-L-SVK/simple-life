@@ -13,10 +13,12 @@ This project is a Rust implementation of a parallel virtual ecosystem simulation
 - Parallel computation using Rayon for efficient multi-core utilization 
 - Real-time visualization using Piston graphics
 - Dedicated stats display area with comprehensive metrics
-
+    
+    Built and tested on Fedora 40 Cinnamon with Ryzen R9 5950X
+    
 ## v0.2 Life improvements
 - More modular code base
-- 40% performance increase (avg. therad usage utilization from 7% - 9% to 5% - 7%)
+- 40% performance increase (avg. therad usage utilization dropped from 7% - 9% to 5% - 7%)
 - Added FPS counter to stats panel
 - Optimized predator hunting logic
 
@@ -143,7 +145,7 @@ Here's a complete guide to getting the simulation running on Windows systems:
 2. **Clone and run the project**:
    ```cmd
    git clone git@github.com:Peter-L-SVK/simple-life.git
-   cd virtual-ecosystem
+   cd simple-life
    cargo run --release
    ```
 
@@ -252,8 +254,6 @@ The simulation automatically scales to use available CPU cores. For best perform
 1. Use `--release` flag for optimized builds
 2. Larger populations (>100 beings) benefit most from parallelization
 3. Stats display shows active thread count
-
- Built and tested on Fedora 40 Cinnamon with Ryzen R9 5950X
 
 ## Customization
 
